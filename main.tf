@@ -1,4 +1,6 @@
-// credits https://github.com/eborchert80/cfn-tgw-vpn/blob/main/README.md
+#credits
+#  - https://github.com/eborchert80/cfn-tgw-vpn/blob/main/README.md
+#  - https://github.com/cloudposse/terraform-aws-vpn-connection
 locals {
   psk_tunnel_1 = "ZMHYCmbI5eTsWUIDNxancwTbkxm3s1c"
   psk_tunnel_2 = "jUSqxwmOSSd1ZFnm3DmpuzpRMxZHrsN4"
@@ -47,9 +49,11 @@ resource "aws_vpn_connection" "site_a_to_b" {
   # cause it is a TF circular dependency. The commandline to run is outputted
   customer_gateway_id    = aws_customer_gateway.dummy_customer.id
   type                   = "ipsec.1"
-  #  static_routes_only       = var.vpn_connection_static_routes_only
-  #  local_ipv4_network_cidr  = var.vpn_connection_local_ipv4_network_cidr
-  #  remote_ipv4_network_cidr = "${aws_eip.site_a_vpn_ip.public_ip}/32"
+  static_routes_only     = true
+  # Customer cidr
+  local_ipv4_network_cidr  = aws_vpc.site_b.cidr_block
+  # AWS CIDR
+  remote_ipv4_network_cidr = aws_vpc.site_a.cidr_block
   #
   #  tunnel1_dpd_timeout_action = var.vpn_connection_tunnel1_dpd_timeout_action
   #  tunnel1_ike_versions       = var.vpn_connection_tunnel1_ike_versions
@@ -108,29 +112,30 @@ resource "aws_vpn_connection" "site_b_to_a" {
   vpn_gateway_id         = aws_vpn_gateway.site_b.id
   customer_gateway_id    = aws_customer_gateway.site_a_customer.id
   type                   = "ipsec.1"
-  #  static_routes_only       = var.vpn_connection_static_routes_only
-  #  local_ipv4_network_cidr  = var.vpn_connection_local_ipv4_network_cidr
-  #  remote_ipv4_network_cidr = "${aws_eip.site_a_vpn_ip.public_ip}/32"
+  static_routes_only     = true
+  # Customer cidr
+  local_ipv4_network_cidr  = aws_vpc.site_a.cidr_block
+  # AWS CIDR
+  remote_ipv4_network_cidr = aws_vpc.site_b.cidr_block
+  # Tunnel 1
   #
   #  tunnel1_dpd_timeout_action = var.vpn_connection_tunnel1_dpd_timeout_action
   #  tunnel1_ike_versions       = var.vpn_connection_tunnel1_ike_versions
   #  tunnel1_inside_cidr        = var.vpn_connection_tunnel1_inside_cidr
   tunnel1_preshared_key  = local.psk_tunnel_1
   tunnel1_startup_action = "add"
-  #
   #  tunnel1_phase1_dh_group_numbers      = var.vpn_connection_tunnel1_phase1_dh_group_numbers
   #  tunnel1_phase2_dh_group_numbers      = var.vpn_connection_tunnel1_phase2_dh_group_numbers
   #  tunnel1_phase1_encryption_algorithms = var.vpn_connection_tunnel1_phase1_encryption_algorithms
   #  tunnel1_phase2_encryption_algorithms = var.vpn_connection_tunnel1_phase2_encryption_algorithms
   #  tunnel1_phase1_integrity_algorithms  = var.vpn_connection_tunnel1_phase1_integrity_algorithms
   #  tunnel1_phase2_integrity_algorithms  = var.vpn_connection_tunnel1_phase2_integrity_algorithms
-  #
+  # Tunnel 2
   #  tunnel2_dpd_timeout_action = var.vpn_connection_tunnel2_dpd_timeout_action
   #  tunnel2_ike_versions       = var.vpn_connection_tunnel2_ike_versions
   #  tunnel2_inside_cidr        = var.vpn_connection_tunnel2_inside_cidr
   tunnel2_preshared_key  = local.psk_tunnel_2
   tunnel2_startup_action = "add"
-  #
   #  tunnel2_phase1_dh_group_numbers      = var.vpn_connection_tunnel2_phase1_dh_group_numbers
   #  tunnel2_phase2_dh_group_numbers      = var.vpn_connection_tunnel2_phase2_dh_group_numbers
   #  tunnel2_phase1_encryption_algorithms = var.vpn_connection_tunnel2_phase1_encryption_algorithms
@@ -141,6 +146,6 @@ resource "aws_vpn_connection" "site_b_to_a" {
   tags = { Name = "Site B to A" }
 }
 
-output "to_run" {
+output "swap_the_customer" {
   value = "aws ec2 modify-vpn-connection --vpn-connection-id ${aws_vpn_connection.site_a_to_b.id} --customer-gateway-id ${aws_customer_gateway.site_b_customer.id}"
 }
