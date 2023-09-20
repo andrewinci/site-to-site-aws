@@ -1,3 +1,6 @@
+output "vpc_id" {
+  value = aws_vpc.site_a.id
+}
 output "vpn_id" {
   value = aws_vpn_connection.site_a_to_b.id
 }

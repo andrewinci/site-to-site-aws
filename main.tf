@@ -1,6 +1,3 @@
-#credits
-#  - https://github.com/eborchert80/cfn-tgw-vpn/blob/main/README.md
-#  - https://github.com/cloudposse/terraform-aws-vpn-connection
 locals {
   psk_tunnel_1 = "ZMHYCmbI5eTsWUIDNxancwTbkxm3s1c"
   psk_tunnel_2 = "jUSqxwmOSSd1ZFnm3DmpuzpRMxZHrsN4"
@@ -47,6 +44,12 @@ resource "aws_customer_gateway" "site_b_customer" {
   ip_address = module.site_b.tunnel1_address
   type       = "ipsec.1"
   tags       = { Name = "Site B customer" }
+}
+
+// peer the team with the site B
+resource "aws_vpc_peering_connection" "peering_site_b_to_team" {
+  peer_vpc_id   = module.site_b.vpc_id
+  vpc_id        = aws_vpc.team.id
 }
 
 output "swap_the_customer" {
